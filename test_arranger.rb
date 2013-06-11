@@ -1,71 +1,53 @@
 #!/usr/bin/env ruby
 
 require 'rubygems'
-require 'ruby-debug'
+require 'celluloid'
+
+class FileManipulator
+  include Celluloid
+
+  def to_build(file)
+    replace_in_file(file, "build")
+  end
+
+  def to_create(file)
+    replace_in_file(file, "new")
+  end
+
+  def replace_in_file(file, sub_word)
+    puts "START #{file}"
+    test_file = File.open(file)
+    text = text_file.read()
+
+    text.each_line do |line|
+      if line.include?("create")
+        puts "LINE: #{line}"
+
+        ## replace create for build
+        ## and run tests
+        line.gsub("create", sub_word)
+        text_file.write(text)
+        `ruby -Itest:lib #{file}`
+
+        ## change based on tests
+        if $?.exitstatus  == 0
+          puts "COMMITING FILE"
+          `git commit -am "#{file}:#{line}"`
+        else
+          ## put things how i found them
+          line.gsub(sub_file, "create")
+          text_file.write(text)
+        end
+
+      end
+    end
+    test_file.close()
+  end
+end
 
 files = `find test | grep _test`
 puts files
 
-files.split(" ").each do |file|
-  puts "START #{file}"
+pool = FileManipulator.pool(size: 6)
+files.map { |file| pool.future(:to_builde, file) }
 
-  test_file = File.open(file, "r")
-  test_file.each_line do |line|
-    if line.include?("create")
-
-      ## replace create for build
-      line.gsub("create", "build")
-
-      ## run tests
-      puts "LINE: #{line}"
-      `ruby -Itest:lib #{file}`
-
-      ## change based on tests
-      if($?.exitstatus  == 0)
-        puts "GOOD"
-        `git commit -am "#{file}:#{line}"`
-      else
-        ## put things how i found them
-        line.gsub("build", "create")
-        puts "BAD"
-      end
-
-    end
-  end
-  test_file.close()
-
-  puts "FILE END"
-end
-
-
-
-files.split(" ").each do |file|
-  puts "START #{file}"
-
-  test_file = File.open(file, "r")
-  test_file.each_line do |line|
-    if line.include?("create")
-
-      ## replace create for build
-      line.gsub("create", "new")
-
-      ## run tests
-      puts "LINE: #{line}"
-      `ruby -Itest:lib #{file}`
-
-      ## change based on tests
-      if($?.exitstatus  == 0)
-        puts "GOOD"
-        `git commit -am "#{file}:#{line}"`
-      else
-        ## put things how i found them
-        line.gsub("build", "create")
-        puts "BAD"
-      end
-
-    end
-  end
-  test_file.close()
-
-  puts "FILE END"
-end
