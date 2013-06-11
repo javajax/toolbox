@@ -17,7 +17,7 @@ class FileManipulator
   def replace_in_file(file, sub_word)
     puts "START #{file}"
     test_file = File.open(file)
-    text = text_file.read()
+    text = test_file.read()
 
     text.each_line do |line|
       if line.include?("create")
@@ -26,7 +26,7 @@ class FileManipulator
         ## replace create for build
         ## and run tests
         line.gsub("create", sub_word)
-        text_file.write(text)
+        test_file.write(text)
         `ruby -Itest:lib #{file}`
 
         ## change based on tests
@@ -36,7 +36,7 @@ class FileManipulator
         else
           ## put things how i found them
           line.gsub(sub_file, "create")
-          text_file.write(text)
+          test_file.write(text)
         end
 
       end
@@ -48,6 +48,9 @@ end
 files = `find test | grep _test`
 puts files
 
+
 pool = FileManipulator.pool(size: 6)
-files.map { |file| pool.future(:to_builde, file) }
+futures = files.split("\n").map { |file| pool.future(:to_build, file) }
+
+# output = futures.map(&:inspect)
 
