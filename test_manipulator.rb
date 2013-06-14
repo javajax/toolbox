@@ -22,16 +22,17 @@ class FileManipulator
 
   def test_change(index, replace_word)
     puts "TESTING:#{replace_word.upcase}:#{@text[index].lstrip}"
-    tmp_file = Tempfile.new( UUID.generate )
+    #tmp_file = Tempfile.new( UUID.generate )
 
     test_text = @text
     test_text[index].sub('create', replace_word)
-    tmp_file.write(test_text.join("\n"))
+    #tmp_file.write(test_text.join())
+    @file.rewind
+    @file.truncate(0)
+    @file.write(@text.join())
 
-    `ruby -Itest:lib #{tmp_file.path}`
-
-    puts tmp_file.size
-    puts $?.exitstatus
+    #`ruby -Itest:lib #{tmp_file.path}`
+    `bundle exec rake test:units TEST=#{@file.path}`
 
     if $?.exitstatus  == 0
       commit_change(test_text, "#{replace_word.upcase}:#{test_text[index].lstrip}")
@@ -42,11 +43,13 @@ class FileManipulator
   end
 
   def commit_change(text, message)
-      puts "COMMITING FILE"
-      @file.rewind
-      @file.truncate(0)
-      @file.write(@text.join("\n"))
-      #`git commit -am "#{@file.path}:#{message}"`
+    puts "COMMITING FILE"
+=begin
+    @file.rewind
+    @file.truncate(0)
+    @file.write(@text.join("\n"))
+=end
+    `git commit -am "#{@file.path}:#{message}"`
   end
 
 end
